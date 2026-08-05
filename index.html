@@ -1,0 +1,1593 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="robots" content="noindex,nosnippet">
+    <title>問答模板</title>
+    <link rel="icon" href="data:,">
+    <style>
+      @font-face {
+        font-family: "Saint";
+        src: url("assets/saint.otf") format("opentype");
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: "Noto Serif TC Game";
+        src: url("assets/NotoSerifTC-VariableFont_wght.ttf") format("truetype");
+        font-display: swap;
+      }
+
+      :root {
+        color-scheme: dark;
+        --blood: #c01821;
+        --blood-hot: #ff3440;
+        --bone: #fff3ef;
+        --panel: rgba(34, 0, 4, 0.96);
+      }
+
+      * { box-sizing: border-box; }
+
+      html,
+      body {
+        min-height: 100%;
+        margin: 0;
+        background: #000;
+        color: var(--bone);
+        font-family: Arial, "Microsoft JhengHei", sans-serif;
+      }
+
+      body {
+        min-height: 100svh;
+        overflow-x: hidden;
+        background:
+          repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 5px),
+          #000;
+      }
+
+      body::after {
+        position: fixed;
+        inset: 0;
+        z-index: 50;
+        content: "";
+        pointer-events: none;
+        background: radial-gradient(circle at 50% 45%, transparent 0 44%, rgba(0, 0, 0, 0.62) 100%);
+        opacity: 0.7;
+      }
+
+      button,
+      input,
+      textarea {
+        font: inherit;
+      }
+
+      button {
+        border: 0;
+        color: inherit;
+        cursor: pointer;
+      }
+
+      .template-shell {
+        display: grid;
+        place-items: center;
+        min-height: 100svh;
+        padding: 18px;
+      }
+
+      .device-stage {
+        position: relative;
+        width: min(92vw, calc(92svh * 941 / 1672), 520px);
+        aspect-ratio: 941 / 1672;
+        isolation: isolate;
+        filter: contrast(1.04) saturate(0.98);
+      }
+
+      .intro-game {
+        position: absolute;
+        left: 10.3%;
+        top: 7.94%;
+        width: 78.76%;
+        height: 79.06%;
+        z-index: 1;
+        overflow: hidden;
+        background: #000;
+      }
+
+      .intro-game::before {
+        position: absolute;
+        inset: -12%;
+        z-index: 0;
+        content: "";
+        pointer-events: none;
+        background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 6px);
+        opacity: 0.28;
+        animation: signal-roll 2.4s linear infinite;
+      }
+
+      .character-field {
+        position: absolute;
+        left: 18.39%;
+        top: 4.27%;
+        width: 67.67%;
+        height: 56.09%;
+        z-index: 1;
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+      }
+
+      .character-sprite {
+        position: absolute;
+        left: 0;
+        top: 0;
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        filter: contrast(1.12) saturate(0.92) drop-shadow(0 0 12px rgba(255, 20, 24, 0.2));
+      }
+
+      .dialog-box {
+        position: absolute;
+        left: -0.06%;
+        top: 58.61%;
+        width: 101.8%;
+        height: 41.87%;
+        z-index: 2;
+        min-height: 124px;
+        border: 2px solid rgba(255, 75, 78, 0.94);
+        border-radius: 8px;
+        background:
+          linear-gradient(180deg, rgba(94, 2, 8, 0.94), rgba(28, 0, 2, 0.92)),
+          radial-gradient(circle at 50% 0%, rgba(255, 70, 76, 0.34), transparent 70%);
+        box-shadow: 0 0 18px rgba(255, 22, 32, 0.48), inset 0 0 18px rgba(255, 58, 64, 0.28);
+      }
+
+      .dialog-text {
+        position: absolute;
+        left: 22.97%;
+        top: 60.31%;
+        width: 62.93%;
+        height: 14.02%;
+        z-index: 8;
+        overflow-x: hidden;
+        overflow-y: auto;
+        margin: 0;
+        padding: 0 18px 0 0;
+        color: rgba(255, 255, 255, 0.88);
+        font-family: "Noto Serif TC Game", "Microsoft JhengHei", serif;
+        font-size: clamp(10px, 1.04vw, 14px);
+        font-weight: 700;
+        line-height: 1.55;
+        white-space: pre-wrap;
+        overflow-wrap: break-word;
+        scrollbar-width: none;
+        scrollbar-gutter: stable;
+        touch-action: pan-y;
+        -webkit-overflow-scrolling: touch;
+        text-shadow: 1px 0 #000, 0 1px #000, 2px 0 rgba(255, 30, 38, 0.5);
+      }
+
+      .dialog-text::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
+      .dialog-scrollbar {
+        position: absolute;
+        left: 77.1%;
+        top: 57.2%;
+        width: 1.7%;
+        height: 15.6%;
+        /* Keep the frame as the foreground layer in normal preview. */
+        z-index: 150;
+        display: none;
+        border: 1px solid rgba(255, 70, 78, 0.5);
+        background: rgba(0, 0, 0, 0.58);
+        box-shadow: 0 0 8px rgba(255, 35, 45, 0.3), inset 0 0 8px rgba(255, 35, 45, 0.18);
+        pointer-events: auto;
+        touch-action: none;
+      }
+
+      .dialog-scrollbar.is-visible { display: block; }
+
+      .device-stage.is-editing .dialog-scrollbar {
+        display: block;
+        /* The editor overlay must be able to select and resize this narrow object. */
+        z-index: 260;
+        outline: 1px dashed rgba(255, 84, 90, 0.5);
+        cursor: move;
+      }
+
+      .dialog-scrollbar__thumb {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        min-height: 28px;
+        border: 0;
+        background: linear-gradient(180deg, #fff5f5, #ff3440 38%, #670006);
+        box-shadow: 0 0 9px rgba(255, 45, 55, 0.92), 0 0 2px rgba(255, 255, 255, 0.95);
+        pointer-events: none;
+      }
+
+      .answer-options {
+        position: absolute;
+        inset: 0;
+        z-index: 9;
+      }
+
+      .answer-option {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 10%;
+        height: 4.6%;
+        min-height: 0;
+        padding: 0;
+        border: 1px solid rgba(255, 100, 104, 0.54);
+        border-radius: 6px;
+        background: rgba(0, 0, 0, 0.46);
+        color: rgba(255, 255, 255, 0.72);
+        font-family: "Courier New", monospace;
+        font-size: clamp(12px, 1.45vw, 20px);
+        font-weight: 800;
+        text-shadow: 1px 0 #000, 0 1px #000;
+        display: grid;
+        place-items: center;
+        transition: background 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+      }
+
+      .answer-option:hover,
+      .answer-option.is-selected {
+        border-color: #fff;
+        background: rgba(255, 28, 36, 0.88);
+        color: #fff;
+        box-shadow: 0 0 14px rgba(255, 30, 38, 0.76);
+      }
+
+      .game-frame {
+        position: absolute;
+        inset: -1.35% auto auto -1.35%;
+        width: 100%;
+        height: 100%;
+        z-index: 160;
+        object-fit: fill;
+        pointer-events: none;
+        user-select: none;
+      }
+
+      /* Same control layout as the original game. These controls are local
+         template previews and never send hardware requests. */
+      .water-button,
+      .dpad {
+        position: absolute;
+        z-index: 180;
+        border-radius: 50%;
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+
+      .water-button {
+        left: 72.5%;
+        top: 82.5%;
+        width: 17.2%;
+        height: 17.2%;
+        padding: 0;
+        border: 0;
+        background:
+          radial-gradient(circle at 36% 26%, rgba(255, 255, 255, 0.9) 0 12%, transparent 22%),
+          radial-gradient(circle at 52% 54%, #ff686a 0 19%, #9f050c 55%, #260001 100%);
+        box-shadow:
+          0 0 12px rgba(255, 210, 210, 0.58),
+          0 0 26px rgba(255, 10, 24, 0.72),
+          inset 0 0 18px rgba(255, 160, 160, 0.48);
+      }
+
+      .water-button:active,
+      .water-button.is-active { transform: scale(0.96); }
+
+      .dpad {
+        left: 27.6%;
+        top: 82.2%;
+        width: 17.6%;
+        height: 17.6%;
+        pointer-events: auto;
+        background:
+          radial-gradient(circle at 38% 28%, rgba(255, 255, 255, 0.92) 0 10%, transparent 20%),
+          radial-gradient(circle at 50% 55%, #d62028 0 18%, #740006 53%, #1b0001 100%);
+        box-shadow:
+          0 0 12px rgba(255, 200, 200, 0.5),
+          0 0 24px rgba(255, 10, 24, 0.62),
+          inset 0 0 18px rgba(255, 95, 100, 0.42);
+      }
+
+      .dpad-button {
+        position: absolute;
+        z-index: 2;
+        width: 55%;
+        height: 55%;
+        padding: 0;
+        border: 0;
+        border-radius: 50%;
+        background: transparent;
+        color: transparent;
+        touch-action: none;
+      }
+
+      .dpad-button.is-active { background: rgba(255, 255, 255, 0.12); }
+      .dpad-up { left: 22.5%; top: -5%; }
+      .dpad-down { left: 22.5%; bottom: -5%; }
+      .dpad-left { left: -5%; top: 22.5%; }
+      .dpad-right { right: -5%; top: 22.5%; }
+
+      .dpad-center {
+        position: absolute;
+        z-index: 1;
+        inset: 34%;
+        pointer-events: none;
+        border-radius: 50%;
+        background: radial-gradient(circle, #fff 0 16%, rgba(255, 55, 60, 0.72) 62%, rgba(0, 0, 0, 0.26) 100%);
+        box-shadow: 0 0 12px rgba(255, 30, 38, 0.8);
+      }
+
+      .control-hint {
+        position: absolute;
+        left: 50%;
+        bottom: 0.8%;
+        z-index: 190;
+        transform: translateX(-50%);
+        color: rgba(255, 220, 220, 0.68);
+        font-size: 9px;
+        letter-spacing: 0;
+        white-space: nowrap;
+        pointer-events: none;
+      }
+
+      .template-status {
+        position: absolute;
+        left: 50%;
+        bottom: 2.8%;
+        z-index: 190;
+        max-width: 70%;
+        transform: translateX(-50%);
+        color: rgba(255, 238, 238, 0.78);
+        font-size: 10px;
+        text-align: center;
+        pointer-events: none;
+      }
+
+      .template-edit-selection {
+        position: absolute;
+        z-index: 390;
+        display: none;
+        border: 1px dashed #fff;
+        box-shadow: 0 0 0 1px rgba(255, 35, 45, 0.92), 0 0 12px rgba(255, 25, 35, 0.72);
+        pointer-events: none;
+      }
+
+      .device-stage.is-editing .template-edit-selection.is-visible { display: block; }
+
+      .template-edit-selection__label {
+        position: absolute;
+        left: 0;
+        top: -22px;
+        padding: 3px 6px;
+        border: 1px solid rgba(255, 91, 98, 0.9);
+        border-radius: 4px;
+        background: rgba(35, 0, 4, 0.96);
+        color: #fff;
+        font-size: 10px;
+        line-height: 1;
+        white-space: nowrap;
+      }
+
+      /* The scrollbar is intentionally narrow. Keep its resize handles outside
+         the hit area so dragging the bar itself always moves it. */
+      .template-edit-selection[data-target="scrollbar"] .template-edit-handle--w,
+      .template-edit-selection[data-target="scrollbar"] .template-edit-handle--nw,
+      .template-edit-selection[data-target="scrollbar"] .template-edit-handle--sw {
+        left: -16px;
+      }
+
+      .template-edit-selection[data-target="scrollbar"] .template-edit-handle--e,
+      .template-edit-selection[data-target="scrollbar"] .template-edit-handle--ne,
+      .template-edit-selection[data-target="scrollbar"] .template-edit-handle--se {
+        right: -16px;
+      }
+
+      .template-edit-selection[data-target="scrollbar"] .template-edit-handle--n,
+      .template-edit-selection[data-target="scrollbar"] .template-edit-handle--nw,
+      .template-edit-selection[data-target="scrollbar"] .template-edit-handle--ne {
+        top: -16px;
+      }
+
+      .template-edit-selection[data-target="scrollbar"] .template-edit-handle--s,
+      .template-edit-selection[data-target="scrollbar"] .template-edit-handle--sw,
+      .template-edit-selection[data-target="scrollbar"] .template-edit-handle--se {
+        bottom: -16px;
+      }
+
+      .template-edit-handle {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        padding: 0;
+        border: 1px solid #fff;
+        border-radius: 2px;
+        background: #ff3440;
+        box-shadow: 0 0 8px rgba(255, 42, 52, 0.95);
+        pointer-events: auto;
+        touch-action: none;
+      }
+
+      .template-edit-handle--nw { left: -6px; top: -6px; cursor: nwse-resize; }
+      .template-edit-handle--n { left: calc(50% - 5px); top: -6px; cursor: ns-resize; }
+      .template-edit-handle--ne { right: -6px; top: -6px; cursor: nesw-resize; }
+      .template-edit-handle--e { right: -6px; top: calc(50% - 5px); cursor: ew-resize; }
+      .template-edit-handle--se { right: -6px; bottom: -6px; cursor: nwse-resize; }
+      .template-edit-handle--s { left: calc(50% - 5px); bottom: -6px; cursor: ns-resize; }
+      .template-edit-handle--sw { left: -6px; bottom: -6px; cursor: nesw-resize; }
+      .template-edit-handle--w { left: -6px; top: calc(50% - 5px); cursor: ew-resize; }
+
+      .device-stage.is-editing .water-button,
+      .device-stage.is-editing .dpad,
+      .device-stage.is-editing .answer-option {
+        outline: 1px dashed rgba(255, 84, 90, 0.5);
+        cursor: move;
+      }
+
+      .template-toolbar {
+        position: fixed;
+        top: max(12px, env(safe-area-inset-top));
+        right: max(12px, env(safe-area-inset-right));
+        z-index: 400;
+        display: flex;
+        gap: 8px;
+      }
+
+      .template-audio {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .toolbar-button,
+      .editor-button {
+        min-height: 36px;
+        padding: 7px 12px;
+        border: 1px solid rgba(255, 93, 98, 0.8);
+        border-radius: 6px;
+        background: rgba(43, 0, 4, 0.94);
+        box-shadow: 0 0 12px rgba(255, 20, 30, 0.26);
+        color: #ffe8e8;
+        font-size: 13px;
+      }
+
+      .toolbar-button:hover,
+      .editor-button:hover { background: rgba(126, 4, 12, 0.94); }
+
+      .editor-panel {
+        position: fixed;
+        top: 58px;
+        right: 16px;
+        z-index: 500;
+        display: none;
+        width: min(340px, calc(100vw - 32px));
+        max-height: calc(100svh - 74px);
+        overflow: auto;
+        padding: 16px;
+        border: 1px solid rgba(255, 73, 80, 0.78);
+        border-radius: 8px;
+        background: var(--panel);
+        box-shadow: 0 0 24px rgba(255, 25, 35, 0.42), inset 0 0 18px rgba(255, 40, 45, 0.12);
+      }
+
+      .editor-panel.is-open { display: block; }
+
+      .editor-panel h1 {
+        margin: 0 0 12px;
+        color: #fff;
+        font-size: 17px;
+      }
+
+      .editor-panel p {
+        margin: 8px 0;
+        color: rgba(255, 224, 224, 0.72);
+        font-size: 12px;
+        line-height: 1.45;
+      }
+
+      .editor-panel .editor-edit-help {
+        margin: 10px 0 0;
+        padding: 8px;
+        border: 1px solid rgba(255, 98, 104, 0.46);
+        border-radius: 5px;
+        background: rgba(108, 3, 10, 0.3);
+        color: #fff0f0;
+      }
+
+      .editor-panel label {
+        display: grid;
+        gap: 6px;
+        margin-top: 12px;
+        color: #ffd9d9;
+        font-size: 12px;
+      }
+
+      .editor-panel textarea,
+      .editor-panel input[type="file"],
+      .editor-panel select {
+        width: 100%;
+        border: 1px solid rgba(255, 80, 88, 0.62);
+        border-radius: 5px;
+        background: rgba(16, 0, 2, 0.94);
+        color: #fff;
+      }
+
+      .editor-panel textarea {
+        min-height: 150px;
+        padding: 9px;
+        resize: vertical;
+        line-height: 1.55;
+      }
+
+      .editor-panel select,
+      .editor-panel input[type="file"] { min-height: 36px; padding: 7px; }
+
+      .editor-fieldset {
+        min-width: 0;
+        margin: 14px 0 0;
+        padding: 10px;
+        border: 1px solid rgba(255, 80, 88, 0.38);
+        border-radius: 6px;
+      }
+
+      .editor-fieldset legend {
+        padding: 0 5px;
+        color: #ffd9d9;
+        font-size: 12px;
+      }
+
+      .editor-section-title {
+        display: block;
+        margin: 12px 0 6px;
+        color: #fff0f0;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .geometry-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+
+      .geometry-grid label { margin-top: 4px; }
+
+      .geometry-grid input[type="number"] {
+        min-height: 32px;
+        padding: 5px 7px;
+      }
+
+      .editor-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .editor-actions .wide { grid-column: 1 / -1; }
+
+      .editor-status {
+        min-height: 18px;
+        color: #ffabb0 !important;
+      }
+
+      .credit-note {
+        position: fixed;
+        left: 12px;
+        bottom: max(10px, env(safe-area-inset-bottom));
+        z-index: 400;
+        color: rgba(255, 220, 220, 0.52);
+        font-size: 11px;
+        pointer-events: none;
+      }
+
+      @keyframes signal-roll {
+        from { transform: translateY(-5%); }
+        to { transform: translateY(5%); }
+      }
+
+      @media (max-width: 680px) {
+        .template-shell { padding: 8px; }
+        .device-stage { width: min(94vw, calc(94svh * 941 / 1672), 520px); }
+        .template-toolbar { top: auto; right: 10px; bottom: max(12px, env(safe-area-inset-bottom)); }
+        .editor-panel {
+          top: auto;
+          right: 10px;
+          bottom: 58px;
+          width: calc(100vw - 20px);
+          max-height: min(64svh, 520px);
+        }
+        .credit-note { display: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="template-toolbar" aria-label="模板工具列">
+      <button id="audioToggle" class="toolbar-button" type="button" aria-pressed="true">音樂／音效：開</button>
+      <button id="editToggle" class="toolbar-button" type="button">編輯模板</button>
+      <button id="resetTemplate" class="toolbar-button" type="button">重置預覽</button>
+    </div>
+
+    <audio id="templateGameMusic" class="template-audio" src="assets/3333.mp3" preload="auto" playsinline loop></audio>
+    <audio id="templateTypewriterSfx" class="template-audio" src="assets/typewriter-sfx.mp3" preload="auto" playsinline loop></audio>
+
+    <main class="template-shell">
+      <section id="deviceStage" class="device-stage" aria-label="問答模板預覽">
+        <div id="introGame" class="intro-game">
+          <div class="character-field">
+            <img id="characterSprite" class="character-sprite" alt="題目角色動畫">
+          </div>
+
+          <div class="dialog-box" aria-hidden="true"></div>
+
+          <p id="dialogText" class="dialog-text"><span id="dialogTextContent"></span></p>
+
+          <div class="answer-options" role="group" aria-label="回答">
+            <button id="answerYes" class="answer-option answer-option--yes" type="button">Y</button>
+            <button id="answerNo" class="answer-option answer-option--no" type="button">N</button>
+          </div>
+        </div>
+
+        <img class="game-frame" src="assets/ui-frame-fast.webp" alt="" aria-hidden="true">
+
+        <div id="dialogScrollbar" class="dialog-scrollbar" aria-label="文字滾動條">
+          <span id="dialogScrollbarThumb" class="dialog-scrollbar__thumb"></span>
+        </div>
+
+        <button id="templateWaterButton" class="water-button" type="button" aria-label="灑水預覽"></button>
+
+        <div id="templateDpad" class="dpad" role="group" aria-label="方向控制預覽">
+          <button class="dpad-button dpad-up" type="button" data-direction="up" aria-label="上">上</button>
+          <button class="dpad-button dpad-left" type="button" data-direction="left" aria-label="左">左</button>
+          <button class="dpad-button dpad-right" type="button" data-direction="right" aria-label="右">右</button>
+          <button class="dpad-button dpad-down" type="button" data-direction="down" aria-label="下">下</button>
+          <span class="dpad-center" aria-hidden="true"></span>
+        </div>
+
+        <span id="controlHint" class="control-hint">方向／灑水按鈕為模板預覽</span>
+        <p id="templateStatus" class="template-status" aria-live="polite"></p>
+
+        <div id="templateEditSelection" class="template-edit-selection" aria-hidden="true">
+          <span id="templateEditSelectionLabel" class="template-edit-selection__label"></span>
+          <button class="template-edit-handle template-edit-handle--nw" type="button" data-handle="nw" aria-label="縮放左上"></button>
+          <button class="template-edit-handle template-edit-handle--n" type="button" data-handle="n" aria-label="縮放上方"></button>
+          <button class="template-edit-handle template-edit-handle--ne" type="button" data-handle="ne" aria-label="縮放右上"></button>
+          <button class="template-edit-handle template-edit-handle--e" type="button" data-handle="e" aria-label="縮放右方"></button>
+          <button class="template-edit-handle template-edit-handle--se" type="button" data-handle="se" aria-label="縮放右下"></button>
+          <button class="template-edit-handle template-edit-handle--s" type="button" data-handle="s" aria-label="縮放下方"></button>
+          <button class="template-edit-handle template-edit-handle--sw" type="button" data-handle="sw" aria-label="縮放左下"></button>
+          <button class="template-edit-handle template-edit-handle--w" type="button" data-handle="w" aria-label="縮放左方"></button>
+        </div>
+      </section>
+    </main>
+
+    <aside id="editorPanel" class="editor-panel" aria-label="問答模板編輯器">
+      <h1>問答模板</h1>
+      <p>這是獨立模板。儲存內容只會留在本瀏覽器，不會修改原本的遊戲。</p>
+      <p class="editor-edit-help">編輯模式：直接點選預覽中的方向鍵、灑水鍵或 Y/N 後拖曳移動；點選框上的紅色控制點即可縮放。完成後按下方儲存按鈕。</p>
+
+      <label>
+        題目
+        <select id="questionSelect"></select>
+      </label>
+
+      <label>
+        GIF 動畫
+        <input id="gifInput" type="file" accept="image/gif,image/webp,image/png,image/jpeg">
+      </label>
+
+      <p id="gifName">目前使用預設動畫</p>
+
+      <fieldset class="editor-fieldset">
+        <legend>GIF 位置與大小（目前題目）</legend>
+        <div class="geometry-grid">
+          <label>左右 X（%）<input id="gifX" type="number" min="-100" max="200" step="0.1"></label>
+          <label>上下 Y（%）<input id="gifY" type="number" min="-100" max="200" step="0.1"></label>
+          <label>寬度（%）<input id="gifWidth" type="number" min="1" max="300" step="0.1"></label>
+          <label>高度（%）<input id="gifHeight" type="number" min="1" max="300" step="0.1"></label>
+        </div>
+        <div class="editor-actions">
+          <button id="resetGifGeometry" class="editor-button wide" type="button">重置 GIF 位置與大小</button>
+        </div>
+      </fieldset>
+
+      <fieldset class="editor-fieldset">
+        <legend>介面按鈕位置與大小（模板共用）</legend>
+
+        <p>數值以 Game Frame 的百分比計算。X 向右增加，Y 向下增加。四個角點等比例縮放，四邊中點可自由調整寬高。</p>
+
+        <strong class="editor-section-title">方向控制</strong>
+        <div class="geometry-grid">
+          <label>X（%）<input id="dpadX" type="number" min="-100" max="200" step="0.1"></label>
+          <label>Y（%）<input id="dpadY" type="number" min="-100" max="200" step="0.1"></label>
+          <label>寬度（%）<input id="dpadWidth" type="number" min="1" max="100" step="0.1"></label>
+          <label>高度（%）<input id="dpadHeight" type="number" min="1" max="100" step="0.1"></label>
+        </div>
+
+        <strong class="editor-section-title">灑水按鈕</strong>
+        <div class="geometry-grid">
+          <label>X（%）<input id="waterX" type="number" min="-100" max="200" step="0.1"></label>
+          <label>Y（%）<input id="waterY" type="number" min="-100" max="200" step="0.1"></label>
+          <label>寬度（%）<input id="waterWidth" type="number" min="1" max="100" step="0.1"></label>
+          <label>高度（%）<input id="waterHeight" type="number" min="1" max="100" step="0.1"></label>
+        </div>
+
+        <strong class="editor-section-title">Y 按鈕</strong>
+        <div class="geometry-grid">
+          <label>X（%）<input id="yesX" type="number" min="-100" max="200" step="0.1"></label>
+          <label>Y（%）<input id="yesY" type="number" min="-100" max="200" step="0.1"></label>
+          <label>寬度（%）<input id="yesWidth" type="number" min="1" max="100" step="0.1"></label>
+          <label>高度（%）<input id="yesHeight" type="number" min="1" max="100" step="0.1"></label>
+        </div>
+
+        <strong class="editor-section-title">N 按鈕</strong>
+        <div class="geometry-grid">
+          <label>X（%）<input id="noX" type="number" min="-100" max="200" step="0.1"></label>
+          <label>Y（%）<input id="noY" type="number" min="-100" max="200" step="0.1"></label>
+          <label>寬度（%）<input id="noWidth" type="number" min="1" max="100" step="0.1"></label>
+          <label>高度（%）<input id="noHeight" type="number" min="1" max="100" step="0.1"></label>
+        </div>
+
+        <div class="editor-actions">
+          <button id="resetUiGeometry" class="editor-button wide" type="button">重置介面按鈕位置與大小</button>
+        </div>
+      </fieldset>
+
+      <fieldset class="editor-fieldset">
+        <legend>題目文字樣式（模板共用）</legend>
+        <div class="geometry-grid">
+          <label>字體大小（vw）<input id="questionFontSize" type="number" min="0.5" max="3" step="0.01"></label>
+          <label>題目字體
+            <select id="questionFontFamily">
+              <option value="Noto Serif TC Game">Noto Serif TC</option>
+              <option value="Microsoft JhengHei">微軟正黑體</option>
+              <option value="serif">系統襯線</option>
+              <option value="Arial">Arial</option>
+            </select>
+          </label>
+        </div>
+      </fieldset>
+
+      <label>
+        問答文字
+        <textarea id="questionInput" spellcheck="false"></textarea>
+      </label>
+
+      <div class="editor-actions">
+        <button id="saveQuestion" class="editor-button wide" type="button">儲存題目與模板設定</button>
+        <button id="clearGif" class="editor-button" type="button">移除自訂 GIF</button>
+        <button id="resetQuestion" class="editor-button" type="button">重置本題</button>
+        <button id="previousQuestion" class="editor-button" type="button">上一題</button>
+        <button id="nextQuestion" class="editor-button" type="button">下一題</button>
+      </div>
+
+      <p id="editorStatus" class="editor-status" aria-live="polite"></p>
+    </aside>
+
+    <p class="credit-note">問答模板 · /question-template.html</p>
+
+    <script>
+      (() => {
+        "use strict";
+
+        const STORAGE_KEY = "standalone-question-template-v1";
+        const defaultQuestions = [
+          {
+            text: "你不慎闖進一場詭譎槍戰的終局。\n倖存的警察身負重傷，所有線索都將使他認定你是槍戰的主嫌。\n\n你會救他嗎？",
+            image: "assets/question-1.gif",
+            label: "預設 question-1.gif",
+            gif: { x: 0, y: 0, w: 100, h: 100 }
+          },
+          {
+            text: "大庭廣眾下，殺害一名陌生人，或是在絕無可能被發現的前提下殺害五名熟識親人。\n兩個選項都能讓你逃脫法律制裁。\n\n你會選擇殺害陌生人嗎？",
+            image: "assets/question-2.gif",
+            label: "預設 question-2.gif",
+            gif: { x: 0, y: 0, w: 100, h: 100 }
+          },
+          {
+            text: "你是一名藝術家，創作關乎你的童年創傷以及兒童人權。\n某位大亨願意長期供養你的創作，但你發現他的主要業務是販賣雛妓。\n\n你會接受供養嗎？",
+            image: "assets/question-3.gif",
+            label: "預設 question-3.gif",
+            gif: { x: 0, y: 0, w: 100, h: 100 }
+          },
+          {
+            text: "末日裡，世界僅剩你一人。\n神現身說明重啟世界的兩種方式。\n\n你會選擇讓世界重新開始嗎？",
+            image: "assets/question-4.gif",
+            label: "預設 question-4.gif",
+            gif: { x: 0, y: 0, w: 100, h: 100 }
+          },
+          {
+            text: "你願意進入天堂嗎？\n那個沒有痛苦、完全自由於悲傷的世界。\n\n你會走進去嗎？",
+            image: "assets/question-5.gif",
+            label: "預設 question-5.gif",
+            gif: { x: 0, y: 0, w: 100, h: 100 }
+          }
+        ];
+
+        const DEFAULT_SETTINGS = {
+          dpad: { x: 27.6, y: 82.2, w: 17.6, h: 17.6 },
+          water: { x: 72.5, y: 82.5, w: 17.2, h: 17.2 },
+          scrollbar: { x: 77.1, y: 57.2, w: 1.7, h: 15.6 },
+          yes: { x: 38.39, y: 75.22, w: 9.7, h: 4.6 },
+          no: { x: 52.77, y: 75.22, w: 10.6, h: 4.6 },
+          questionFontSize: 1.04,
+          questionFontFamily: "Noto Serif TC Game"
+        };
+
+        const state = {
+          questions: clone(defaultQuestions),
+          index: 0,
+          answer: "",
+          settings: clone(DEFAULT_SETTINGS)
+        };
+
+        const $ = (id) => document.getElementById(id);
+        const characterSprite = $("characterSprite");
+        const dialogText = $("dialogText");
+        const dialogTextContent = $("dialogTextContent");
+        const scrollbar = $("dialogScrollbar");
+        const scrollbarThumb = $("dialogScrollbarThumb");
+        const status = $("templateStatus");
+        const editorPanel = $("editorPanel");
+        const editorStatus = $("editorStatus");
+        const questionSelect = $("questionSelect");
+        const questionInput = $("questionInput");
+        const gifInput = $("gifInput");
+        const gifName = $("gifName");
+        const gifX = $("gifX");
+        const gifY = $("gifY");
+        const gifWidth = $("gifWidth");
+        const gifHeight = $("gifHeight");
+        const dpad = $("templateDpad");
+        const waterButton = $("templateWaterButton");
+        const yesButton = $("answerYes");
+        const noButton = $("answerNo");
+        const dpadX = $("dpadX");
+        const dpadY = $("dpadY");
+        const dpadWidth = $("dpadWidth");
+        const dpadHeight = $("dpadHeight");
+        const waterX = $("waterX");
+        const waterY = $("waterY");
+        const waterWidth = $("waterWidth");
+        const waterHeight = $("waterHeight");
+        const yesX = $("yesX");
+        const yesY = $("yesY");
+        const yesWidth = $("yesWidth");
+        const yesHeight = $("yesHeight");
+        const noX = $("noX");
+        const noY = $("noY");
+        const noWidth = $("noWidth");
+        const noHeight = $("noHeight");
+        const questionFontSize = $("questionFontSize");
+        const questionFontFamily = $("questionFontFamily");
+        const templateEditSelection = $("templateEditSelection");
+        const templateEditSelectionLabel = $("templateEditSelectionLabel");
+        const deviceStage = $("deviceStage");
+        const audioToggle = $("audioToggle");
+        const gameMusic = $("templateGameMusic");
+        const typewriterSfx = $("templateTypewriterSfx");
+
+        const editableTargets = {
+          dpad: { element: dpad, label: "方向控制" },
+          water: { element: waterButton, label: "灑水按鈕" },
+          scrollbar: { element: scrollbar, label: "文字滑桿" },
+          yes: { element: yesButton, label: "Y 按鈕" },
+          no: { element: noButton, label: "N 按鈕" }
+        };
+        let selectedTarget = "";
+        let editDrag = null;
+        let templateAudioEnabled = true;
+        let typewriterTimer = 0;
+        let typewriterRun = 0;
+
+        function clone(value) {
+          return JSON.parse(JSON.stringify(value));
+        }
+
+        function unlockTemplateAudio() {
+          if (!templateAudioEnabled) return;
+          gameMusic.volume = 0.72;
+          if (gameMusic.paused) gameMusic.play().catch(() => {});
+          if (typewriterTimer && typewriterSfx.paused) {
+            typewriterSfx.loop = true;
+            typewriterSfx.volume = 0.35;
+            typewriterSfx.play().catch(() => {});
+          }
+        }
+
+        function stopTemplateTypewriter() {
+          typewriterRun += 1;
+          if (typewriterTimer) {
+            window.clearTimeout(typewriterTimer);
+            typewriterTimer = 0;
+          }
+          typewriterSfx.pause();
+          typewriterSfx.currentTime = 0;
+        }
+
+        function startTemplateTypewriter(text) {
+          stopTemplateTypewriter();
+          const run = typewriterRun;
+          const content = String(text || "");
+          let index = 0;
+          dialogTextContent.textContent = "";
+
+          if (templateAudioEnabled) {
+            typewriterSfx.loop = true;
+            typewriterSfx.volume = 0.35;
+            typewriterSfx.currentTime = 0;
+            typewriterSfx.play().catch(() => {});
+          }
+
+          const typeNext = () => {
+            if (run !== typewriterRun) return;
+            if (index >= content.length) {
+              typewriterTimer = 0;
+              typewriterSfx.pause();
+              typewriterSfx.currentTime = 0;
+              dialogText.scrollTop = dialogText.scrollHeight;
+              syncScrollbar();
+              return;
+            }
+            dialogTextContent.textContent += content[index];
+            index += 1;
+            dialogText.scrollTop = dialogText.scrollHeight;
+            syncScrollbar();
+            typewriterTimer = window.setTimeout(typeNext, content[index - 1] === "\n" ? 100 : 34);
+          };
+
+          typeNext();
+        }
+
+        function setTemplateAudioEnabled(enabled) {
+          templateAudioEnabled = Boolean(enabled);
+          audioToggle.setAttribute("aria-pressed", String(templateAudioEnabled));
+          audioToggle.textContent = templateAudioEnabled ? "音樂／音效：開" : "音樂／音效：關";
+          if (templateAudioEnabled) {
+            unlockTemplateAudio();
+            return;
+          }
+          gameMusic.pause();
+          gameMusic.currentTime = 0;
+          stopTemplateTypewriter();
+        }
+
+        function normalizeGifGeometry(value) {
+          const source = value && typeof value === "object" ? value : {};
+          const number = (input, fallback) => {
+            const parsed = Number(input);
+            return Number.isFinite(parsed) ? parsed : fallback;
+          };
+          return {
+            x: number(source.x, 0),
+            y: number(source.y, 0),
+            w: Math.max(1, number(source.w, 100)),
+            h: Math.max(1, number(source.h, 100))
+          };
+        }
+
+        function clampNumber(input, fallback, min, max) {
+          const parsed = Number(input);
+          if (!Number.isFinite(parsed)) return fallback;
+          return Math.min(max, Math.max(min, parsed));
+        }
+
+        function normalizeSettings(value) {
+          const source = value && typeof value === "object" ? value : {};
+          const box = (key, fields) => {
+            const defaults = DEFAULT_SETTINGS[key];
+            const candidate = source[key] && typeof source[key] === "object" ? source[key] : {};
+            const result = {};
+            fields.forEach(([field, min, max]) => {
+              result[field] = clampNumber(candidate[field], defaults[field], min, max);
+            });
+            return result;
+          };
+          const resizableBox = (key) => {
+            const defaults = DEFAULT_SETTINGS[key];
+            const candidate = source[key] && typeof source[key] === "object" ? source[key] : {};
+            const legacySize = clampNumber(candidate.size, defaults.w, 1, 100);
+            return {
+              x: clampNumber(candidate.x, defaults.x, -100, 200),
+              y: clampNumber(candidate.y, defaults.y, -100, 200),
+              w: clampNumber(candidate.w, legacySize, 1, 100),
+              h: clampNumber(candidate.h, legacySize, 1, 100)
+            };
+          };
+          const allowedFamilies = [
+            "Noto Serif TC Game",
+            "Microsoft JhengHei",
+            "serif",
+            "Arial"
+          ];
+          return {
+            dpad: resizableBox("dpad"),
+            water: resizableBox("water"),
+            scrollbar: box("scrollbar", [["x", -100, 200], ["y", -100, 200], ["w", 0.5, 20], ["h", 1, 100]]),
+            yes: box("yes", [["x", -100, 200], ["y", -100, 200], ["w", 1, 100], ["h", 1, 100]]),
+            no: box("no", [["x", -100, 200], ["y", -100, 200], ["w", 1, 100], ["h", 1, 100]]),
+            questionFontSize: clampNumber(source.questionFontSize, DEFAULT_SETTINGS.questionFontSize, 0.5, 3),
+            questionFontFamily: allowedFamilies.includes(source.questionFontFamily)
+              ? source.questionFontFamily
+              : DEFAULT_SETTINGS.questionFontFamily
+          };
+        }
+
+        function loadSavedTemplate() {
+          try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) return;
+            const parsed = JSON.parse(raw);
+            state.settings = normalizeSettings(parsed.settings);
+            if (!Array.isArray(parsed.questions) || parsed.questions.length === 0) return;
+            state.questions = parsed.questions.map((item, index) => ({
+              text: typeof item.text === "string" ? item.text : defaultQuestions[index % defaultQuestions.length].text,
+              image: typeof item.image === "string" && item.image ? item.image : defaultQuestions[index % defaultQuestions.length].image,
+              label: typeof item.label === "string" ? item.label : "自訂動畫",
+              gif: normalizeGifGeometry(item.gif)
+            }));
+          } catch (error) {
+            console.warn("question template load failed", error);
+          }
+        }
+
+        function saveTemplate() {
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({
+              questions: state.questions,
+              settings: state.settings
+            }));
+            editorStatus.textContent = "題目與模板介面設定已儲存到此瀏覽器。";
+          } catch (error) {
+            editorStatus.textContent = "儲存失敗：GIF 檔案可能太大，請改用較小檔案。";
+            console.warn("question template save failed", error);
+          }
+        }
+
+        function setBoxGeometry(element, box) {
+          element.style.left = `${box.x}%`;
+          element.style.top = `${box.y}%`;
+          element.style.width = `${box.w}%`;
+          element.style.height = `${box.h}%`;
+        }
+
+        function applySettingsToPreview() {
+          const settings = state.settings;
+          setBoxGeometry(dpad, settings.dpad);
+          setBoxGeometry(waterButton, settings.water);
+          setBoxGeometry(scrollbar, settings.scrollbar);
+          setBoxGeometry(yesButton, settings.yes);
+          setBoxGeometry(noButton, settings.no);
+          const family = settings.questionFontFamily === "serif"
+            ? "serif"
+            : `"${settings.questionFontFamily}"`;
+          dialogText.style.fontSize = `clamp(10px, ${settings.questionFontSize}vw, 28px)`;
+          dialogText.style.fontFamily = `${family}, "Microsoft JhengHei", serif`;
+        }
+
+        function isEditorMode() {
+          return editorPanel.classList.contains("is-open");
+        }
+
+        function getEditableBox(targetName) {
+          const target = editableTargets[targetName];
+          const source = state.settings[targetName];
+          if (!target || !source) return null;
+          return { x: source.x, y: source.y, w: source.w, h: source.h };
+        }
+
+        function updateSelectionOverlay() {
+          if (!isEditorMode() || !selectedTarget) {
+            templateEditSelection.classList.remove("is-visible");
+            templateEditSelection.dataset.target = "";
+            templateEditSelectionLabel.textContent = "";
+            return;
+          }
+          const target = editableTargets[selectedTarget];
+          const box = getEditableBox(selectedTarget);
+          if (!target || !box) return;
+          templateEditSelection.style.left = `${box.x}%`;
+          templateEditSelection.style.top = `${box.y}%`;
+          templateEditSelection.style.width = `${box.w}%`;
+          templateEditSelection.style.height = `${box.h}%`;
+          templateEditSelection.dataset.target = selectedTarget;
+          templateEditSelectionLabel.textContent = `${target.label} · 拖曳紅點縮放`;
+          templateEditSelection.classList.add("is-visible");
+        }
+
+        function selectEditableTarget(targetName) {
+          if (!editableTargets[targetName]) return;
+          selectedTarget = targetName;
+          updateSelectionOverlay();
+          editorStatus.textContent = `${editableTargets[targetName].label} 已選取：拖曳物件移動，拖曳紅色控制點縮放。`;
+        }
+
+        function updateEditableBox(targetName, box) {
+          const target = editableTargets[targetName];
+          if (!target) return;
+          state.settings[targetName] = {
+            x: box.x,
+            y: box.y,
+            w: Math.max(1, box.w),
+            h: Math.max(1, box.h)
+          };
+          state.settings = normalizeSettings(state.settings);
+          applySettingsToPreview();
+          syncSettingsEditor();
+          updateSelectionOverlay();
+        }
+
+        function pointerDeltaPercent(event, drag) {
+          const bounds = deviceStage.getBoundingClientRect();
+          return {
+            x: (event.clientX - drag.startX) / Math.max(1, bounds.width) * 100,
+            y: (event.clientY - drag.startY) / Math.max(1, bounds.height) * 100
+          };
+        }
+
+        function resizedBox(start, handle, delta) {
+          // Corner handles preserve aspect ratio; side handles resize one axis.
+          if (handle.length === 2) {
+            const signX = handle.includes("e") ? 1 : -1;
+            const signY = handle.includes("s") ? 1 : -1;
+            const candidateW = Math.max(1, start.w + signX * delta.x);
+            const candidateH = Math.max(1, start.h + signY * delta.y);
+            const widthScale = candidateW / start.w;
+            const heightScale = candidateH / start.h;
+            const scale = Math.abs(widthScale - 1) >= Math.abs(heightScale - 1)
+              ? widthScale
+              : heightScale;
+            const width = Math.max(1, start.w * scale);
+            const height = Math.max(1, start.h * scale);
+            return {
+              x: signX < 0 ? start.x + start.w - width : start.x,
+              y: signY < 0 ? start.y + start.h - height : start.y,
+              w: width,
+              h: height
+            };
+          }
+          const box = { ...start };
+          if (handle.includes("w")) {
+            box.x = start.x + delta.x;
+            box.w = start.w - delta.x;
+          }
+          if (handle.includes("e")) box.w = start.w + delta.x;
+          if (handle.includes("n")) {
+            box.y = start.y + delta.y;
+            box.h = start.h - delta.y;
+          }
+          if (handle.includes("s")) box.h = start.h + delta.y;
+          box.w = Math.max(1, box.w);
+          box.h = Math.max(1, box.h);
+          return box;
+        }
+
+        function setEditorMode(open) {
+          editorPanel.classList.toggle("is-open", open);
+          deviceStage.classList.toggle("is-editing", open);
+          editDrag = null;
+          if (!open) selectedTarget = "";
+          updateSelectionOverlay();
+          requestAnimationFrame(syncScrollbar);
+        }
+
+        function syncSettingsEditor() {
+          const settings = state.settings;
+          dpadX.value = String(settings.dpad.x);
+          dpadY.value = String(settings.dpad.y);
+          dpadWidth.value = String(settings.dpad.w);
+          dpadHeight.value = String(settings.dpad.h);
+          waterX.value = String(settings.water.x);
+          waterY.value = String(settings.water.y);
+          waterWidth.value = String(settings.water.w);
+          waterHeight.value = String(settings.water.h);
+          yesX.value = String(settings.yes.x);
+          yesY.value = String(settings.yes.y);
+          yesWidth.value = String(settings.yes.w);
+          yesHeight.value = String(settings.yes.h);
+          noX.value = String(settings.no.x);
+          noY.value = String(settings.no.y);
+          noWidth.value = String(settings.no.w);
+          noHeight.value = String(settings.no.h);
+          questionFontSize.value = String(settings.questionFontSize);
+          questionFontFamily.value = settings.questionFontFamily;
+        }
+
+        function updateSettingsFromEditor() {
+          const current = state.settings;
+          state.settings = normalizeSettings({
+            dpad: {
+              x: clampNumber(dpadX.value, current.dpad.x, -100, 200),
+              y: clampNumber(dpadY.value, current.dpad.y, -100, 200),
+              w: clampNumber(dpadWidth.value, current.dpad.w, 1, 100),
+              h: clampNumber(dpadHeight.value, current.dpad.h, 1, 100)
+            },
+            water: {
+              x: clampNumber(waterX.value, current.water.x, -100, 200),
+              y: clampNumber(waterY.value, current.water.y, -100, 200),
+              w: clampNumber(waterWidth.value, current.water.w, 1, 100),
+              h: clampNumber(waterHeight.value, current.water.h, 1, 100)
+            },
+            scrollbar: { ...current.scrollbar },
+            yes: {
+              x: clampNumber(yesX.value, current.yes.x, -100, 200),
+              y: clampNumber(yesY.value, current.yes.y, -100, 200),
+              w: clampNumber(yesWidth.value, current.yes.w, 1, 100),
+              h: clampNumber(yesHeight.value, current.yes.h, 1, 100)
+            },
+            no: {
+              x: clampNumber(noX.value, current.no.x, -100, 200),
+              y: clampNumber(noY.value, current.no.y, -100, 200),
+              w: clampNumber(noWidth.value, current.no.w, 1, 100),
+              h: clampNumber(noHeight.value, current.no.h, 1, 100)
+            },
+            questionFontSize: clampNumber(questionFontSize.value, current.questionFontSize, 0.5, 3),
+            questionFontFamily: questionFontFamily.value
+          });
+          applySettingsToPreview();
+          editorStatus.textContent = "介面設定已套用，請按儲存保存。";
+        }
+
+        function populateQuestionSelect() {
+          questionSelect.replaceChildren();
+          state.questions.forEach((_, index) => {
+            const option = document.createElement("option");
+            option.value = String(index);
+            option.textContent = `第 ${index + 1} 題`;
+            questionSelect.append(option);
+          });
+          questionSelect.value = String(state.index);
+        }
+
+        function syncScrollbar() {
+          const max = dialogText.scrollHeight - dialogText.clientHeight;
+          if (max <= 1) {
+            scrollbar.classList.toggle("is-visible", isEditorMode());
+            scrollbarThumb.style.height = isEditorMode() ? "100%" : "";
+            scrollbarThumb.style.transform = "translateY(0)";
+            return;
+          }
+          scrollbar.classList.add("is-visible");
+          const trackHeight = scrollbar.clientHeight;
+          const thumbHeight = Math.max(28, trackHeight * dialogText.clientHeight / dialogText.scrollHeight);
+          const travel = Math.max(0, trackHeight - thumbHeight);
+          scrollbarThumb.style.height = `${thumbHeight}px`;
+          scrollbarThumb.style.transform = `translateY(${travel * dialogText.scrollTop / max}px)`;
+        }
+
+        function renderQuestion() {
+          const question = state.questions[state.index];
+          if (!question) return;
+          question.gif = normalizeGifGeometry(question.gif);
+          applySettingsToPreview();
+          characterSprite.src = question.image;
+          characterSprite.alt = `第 ${state.index + 1} 題角色動畫`;
+          characterSprite.style.left = `${question.gif.x}%`;
+          characterSprite.style.top = `${question.gif.y}%`;
+          characterSprite.style.width = `${question.gif.w}%`;
+          characterSprite.style.height = `${question.gif.h}%`;
+          startTemplateTypewriter(question.text);
+          dialogText.scrollTop = dialogText.scrollHeight;
+          state.answer = "";
+          $("answerYes").classList.remove("is-selected");
+          $("answerNo").classList.remove("is-selected");
+          status.textContent = `第 ${state.index + 1} 題 / ${state.questions.length}`;
+          questionSelect.value = String(state.index);
+          questionInput.value = question.text;
+          gifName.textContent = question.label || "目前使用預設動畫";
+          gifX.value = String(question.gif.x);
+          gifY.value = String(question.gif.y);
+          gifWidth.value = String(question.gif.w);
+          gifHeight.value = String(question.gif.h);
+          syncSettingsEditor();
+          updateSelectionOverlay();
+          requestAnimationFrame(syncScrollbar);
+        }
+
+        function setQuestion(index) {
+          state.index = Math.max(0, Math.min(state.questions.length - 1, index));
+          renderQuestion();
+        }
+
+        function selectAnswer(answer) {
+          state.answer = answer;
+          $("answerYes").classList.toggle("is-selected", answer === "Y");
+          $("answerNo").classList.toggle("is-selected", answer === "N");
+          status.textContent = `第 ${state.index + 1} 題已選擇 ${answer}`;
+        }
+
+        function setDirectionPreview(button, active) {
+          button.classList.toggle("is-active", active);
+          if (active) status.textContent = `方向預覽：${button.dataset.direction}`;
+        }
+
+        function bindDirectionButton(button) {
+          const start = (event) => {
+            event.preventDefault();
+            if (isEditorMode()) return;
+            button.setPointerCapture?.(event.pointerId);
+            setDirectionPreview(button, true);
+          };
+          const stop = () => setDirectionPreview(button, false);
+          button.addEventListener("pointerdown", start);
+          button.addEventListener("pointerup", stop);
+          button.addEventListener("pointercancel", stop);
+          button.addEventListener("lostpointercapture", stop);
+        }
+
+        function updateGifGeometryFromEditor() {
+          const question = state.questions[state.index];
+          if (!question) return;
+          question.gif = normalizeGifGeometry({
+            x: gifX.value,
+            y: gifY.value,
+            w: gifWidth.value,
+            h: gifHeight.value
+          });
+          renderQuestion();
+          editorStatus.textContent = "GIF 位置與大小已套用，請按儲存保存。";
+        }
+
+        function readFileAsDataUrl(file) {
+          return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.addEventListener("load", () => resolve(String(reader.result || "")));
+            reader.addEventListener("error", () => reject(reader.error || new Error("file read failed")));
+            reader.readAsDataURL(file);
+          });
+        }
+
+        $("editToggle").addEventListener("click", () => {
+          unlockTemplateAudio();
+          setEditorMode(!isEditorMode());
+        });
+
+        audioToggle.addEventListener("click", () => {
+          setTemplateAudioEnabled(!templateAudioEnabled);
+        });
+
+        $("resetTemplate").addEventListener("click", () => {
+          unlockTemplateAudio();
+          state.questions = clone(defaultQuestions);
+          state.index = 0;
+          state.answer = "";
+          state.settings = clone(DEFAULT_SETTINGS);
+          localStorage.removeItem(STORAGE_KEY);
+          populateQuestionSelect();
+          renderQuestion();
+          editorStatus.textContent = "已重置模板預覽。";
+        });
+
+        questionSelect.addEventListener("change", () => setQuestion(Number(questionSelect.value)));
+
+        questionInput.addEventListener("input", () => {
+          stopTemplateTypewriter();
+          state.questions[state.index].text = questionInput.value;
+          dialogTextContent.textContent = questionInput.value;
+          dialogText.scrollTop = dialogText.scrollHeight;
+          requestAnimationFrame(syncScrollbar);
+        });
+
+        gifInput.addEventListener("change", async () => {
+          const file = gifInput.files?.[0];
+          if (!file) return;
+          if (!file.type.startsWith("image/")) {
+            editorStatus.textContent = "請選擇 GIF、WEBP、PNG 或 JPG。";
+            return;
+          }
+          try {
+            const dataUrl = await readFileAsDataUrl(file);
+            state.questions[state.index].image = dataUrl;
+            state.questions[state.index].label = `自訂：${file.name}`;
+            renderQuestion();
+            editorStatus.textContent = "動畫已載入，請按「儲存目前題目」保存。";
+          } catch (error) {
+            editorStatus.textContent = "動畫載入失敗。";
+          } finally {
+            gifInput.value = "";
+          }
+        });
+
+        $("saveQuestion").addEventListener("click", saveTemplate);
+
+        $("clearGif").addEventListener("click", () => {
+          const fallback = defaultQuestions[state.index % defaultQuestions.length];
+          state.questions[state.index].image = fallback.image;
+          state.questions[state.index].label = fallback.label;
+          renderQuestion();
+          editorStatus.textContent = "已移除本題自訂 GIF。請按儲存保存。";
+        });
+
+        $("resetQuestion").addEventListener("click", () => {
+          const fallback = defaultQuestions[state.index % defaultQuestions.length];
+          state.questions[state.index] = clone(fallback);
+          renderQuestion();
+          editorStatus.textContent = "本題已重置。請按儲存保存。";
+        });
+
+        $("resetGifGeometry").addEventListener("click", () => {
+          state.questions[state.index].gif = { x: 0, y: 0, w: 100, h: 100 };
+          renderQuestion();
+          editorStatus.textContent = "GIF 位置與大小已重置。請按儲存保存。";
+        });
+
+        $("resetUiGeometry").addEventListener("click", () => {
+          state.settings = clone(DEFAULT_SETTINGS);
+          applySettingsToPreview();
+          syncSettingsEditor();
+          editorStatus.textContent = "介面按鈕與題目字體已重置。請按儲存保存。";
+        });
+
+        [gifX, gifY, gifWidth, gifHeight].forEach((input) => {
+          input.addEventListener("change", updateGifGeometryFromEditor);
+          input.addEventListener("input", updateGifGeometryFromEditor);
+        });
+
+        [
+          dpadX, dpadY, dpadWidth, dpadHeight,
+          waterX, waterY, waterWidth, waterHeight,
+          yesX, yesY, yesWidth, yesHeight,
+          noX, noY, noWidth, noHeight,
+          questionFontSize, questionFontFamily
+        ].forEach((input) => {
+          input.addEventListener("change", updateSettingsFromEditor);
+          input.addEventListener("input", updateSettingsFromEditor);
+        });
+
+        Object.entries(editableTargets).forEach(([targetName, target]) => {
+          target.element.addEventListener("pointerdown", (event) => {
+            if (!isEditorMode()) return;
+            event.preventDefault();
+            event.stopPropagation();
+            selectEditableTarget(targetName);
+            editDrag = {
+              kind: "move",
+              targetName,
+              startX: event.clientX,
+              startY: event.clientY,
+              startBox: getEditableBox(targetName)
+            };
+          });
+        });
+
+        templateEditSelection.addEventListener("pointerdown", (event) => {
+          const handle = event.target.closest("[data-handle]");
+          if (!handle || !isEditorMode() || !selectedTarget) return;
+          event.preventDefault();
+          event.stopPropagation();
+          editDrag = {
+            kind: "resize",
+            targetName: selectedTarget,
+            handle: handle.dataset.handle,
+            startX: event.clientX,
+            startY: event.clientY,
+            startBox: getEditableBox(selectedTarget)
+          };
+        });
+
+        window.addEventListener("pointermove", (event) => {
+          if (!editDrag || !isEditorMode()) return;
+          event.preventDefault();
+          const delta = pointerDeltaPercent(event, editDrag);
+          const nextBox = editDrag.kind === "move"
+            ? {
+                ...editDrag.startBox,
+                x: editDrag.startBox.x + delta.x,
+                y: editDrag.startBox.y + delta.y
+              }
+            : resizedBox(editDrag.startBox, editDrag.handle, delta);
+          updateEditableBox(editDrag.targetName, nextBox);
+        }, { passive: false });
+
+        window.addEventListener("pointerup", () => {
+          if (!editDrag) return;
+          editDrag = null;
+          syncSettingsEditor();
+          editorStatus.textContent = "位置與大小已套用，請按儲存題目與模板設定保存。";
+        });
+
+        deviceStage.addEventListener("pointerdown", (event) => {
+          if (isEditorMode() && event.target === deviceStage) {
+            selectedTarget = "";
+            updateSelectionOverlay();
+          }
+        });
+
+        $("previousQuestion").addEventListener("click", () => setQuestion(state.index - 1));
+        $("nextQuestion").addEventListener("click", () => setQuestion(state.index + 1));
+        $("answerYes").addEventListener("click", () => {
+          if (!isEditorMode()) {
+            unlockTemplateAudio();
+            selectAnswer("Y");
+          }
+        });
+        $("answerNo").addEventListener("click", () => {
+          if (!isEditorMode()) {
+            unlockTemplateAudio();
+            selectAnswer("N");
+          }
+        });
+        $("templateWaterButton").addEventListener("click", () => {
+          if (isEditorMode()) return;
+          unlockTemplateAudio();
+          const button = $("templateWaterButton");
+          button.classList.add("is-active");
+          status.textContent = "灑水預覽已觸發（獨立模板，不連接硬體）";
+          window.setTimeout(() => button.classList.remove("is-active"), 180);
+        });
+        document.querySelectorAll(".dpad-button").forEach(bindDirectionButton);
+        dialogText.addEventListener("scroll", syncScrollbar, { passive: true });
+
+        let scrollbarDrag = null;
+        scrollbar.addEventListener("pointerdown", (event) => {
+          if (isEditorMode()) return;
+          const max = dialogText.scrollHeight - dialogText.clientHeight;
+          if (max <= 1) return;
+          scrollbarDrag = { startY: event.clientY, startScroll: dialogText.scrollTop };
+          scrollbar.setPointerCapture?.(event.pointerId);
+          event.preventDefault();
+        });
+        scrollbar.addEventListener("pointermove", (event) => {
+          if (isEditorMode()) return;
+          if (!scrollbarDrag) return;
+          const travel = Math.max(1, scrollbar.clientHeight - scrollbarThumb.clientHeight);
+          const max = dialogText.scrollHeight - dialogText.clientHeight;
+          dialogText.scrollTop = scrollbarDrag.startScroll + (event.clientY - scrollbarDrag.startY) * max / travel;
+        });
+        scrollbar.addEventListener("pointerup", () => { if (!isEditorMode()) scrollbarDrag = null; });
+        scrollbar.addEventListener("pointercancel", () => { if (!isEditorMode()) scrollbarDrag = null; });
+
+        window.addEventListener("resize", () => requestAnimationFrame(syncScrollbar));
+        window.addEventListener("keydown", (event) => {
+          unlockTemplateAudio();
+          const target = event.target;
+          const isFormField = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement;
+          if (event.key.toLowerCase() === "e" && !event.ctrlKey && !event.metaKey) {
+            setEditorMode(!isEditorMode());
+          }
+          if (event.key === "Escape" && isEditorMode()) {
+            selectedTarget = "";
+            updateSelectionOverlay();
+          }
+          if (!isFormField && event.key === "ArrowLeft") setQuestion(state.index - 1);
+          if (!isFormField && event.key === "ArrowRight") setQuestion(state.index + 1);
+        });
+
+        window.render_game_to_text = () => JSON.stringify({
+          mode: "question-template",
+          question: state.index + 1,
+          totalQuestions: state.questions.length,
+          answer: state.answer,
+          animation: state.questions[state.index]?.label || "",
+          gif: state.questions[state.index]?.gif || null,
+          settings: state.settings,
+          text: state.questions[state.index]?.text || ""
+        });
+
+        window.advanceTime = (ms) => {
+          if (ms > 0) requestAnimationFrame(syncScrollbar);
+        };
+
+        window.addEventListener("pointerdown", unlockTemplateAudio, { passive: true });
+
+        loadSavedTemplate();
+        populateQuestionSelect();
+        renderQuestion();
+      })();
+    </script>
+  </body>
+</html>
