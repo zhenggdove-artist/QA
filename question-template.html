@@ -677,7 +677,7 @@
 
     <aside id="editorPanel" class="editor-panel" aria-label="問答模板編輯器">
       <h1>問答模板</h1>
-      <p>這是獨立模板。儲存內容只會留在本瀏覽器，不會修改原本的遊戲。</p>
+      <p>這是獨立模板，不會修改原本的遊戲。儲存本機草稿不會自動同步其他設備；要讓其他設備看到更新，請使用下方的 GitHub Pages 發布。</p>
       <p class="editor-edit-help">編輯模式：直接點選預覽中的方向鍵、灑水鍵或 Y/N 後拖曳移動；點選框上的紅色控制點即可縮放。完成後按下方儲存按鈕。</p>
 
       <label>
@@ -775,6 +775,17 @@
         <button id="nextQuestion" class="editor-button" type="button">下一題</button>
       </div>
 
+      <fieldset class="editor-fieldset publish-fieldset">
+        <legend>跨設備發布到 GitHub Pages</legend>
+        <p>此獨立網站是靜態頁面，瀏覽器不能直接寫回 repository。發布時會將題目、介面設定與自訂 GIF 寫入 `zhenggdove-artist/QA`，其他設備重新開啟頁面即可讀取。</p>
+        <label>
+          GitHub Fine-grained Token
+          <input id="githubToken" type="password" autocomplete="off" spellcheck="false" placeholder="只在本次發布使用，不會儲存">
+        </label>
+        <p class="editor-edit-help">Token 只需授權 QA repository 的 Contents：Read and write。不要把 Token 傳給任何人；發布完成後可在 GitHub 撤銷它。</p>
+        <button id="publishTemplate" class="editor-button wide" type="button">發布到 GitHub Pages</button>
+      </fieldset>
+
       <p id="editorStatus" class="editor-status" aria-live="polite"></p>
     </aside>
 
@@ -785,6 +796,12 @@
         "use strict";
 
         const STORAGE_KEY = "standalone-question-template-v1";
+        const GIF_DB_NAME = "standalone-question-template-assets-v1";
+        const GIF_DB_STORE = "gifDrafts";
+        const PUBLISH_OWNER = "zhenggdove-artist";
+        const PUBLISH_REPOSITORY = "QA";
+        const PUBLISH_BRANCH = "main";
+        const PUBLISH_CONFIG_PATH = "qa-config.json";
         const defaultQuestions = [
           {
             text: "你不慎闖進一場詭譎槍戰的終局。\n倖存的警察身負重傷，所有線索都將使他認定你是槍戰的主嫌。\n\n你會救他嗎？",
@@ -832,7 +849,8 @@
           questions: clone(defaultQuestions),
           index: 0,
           answer: "",
-          settings: clone(DEFAULT_SETTINGS)
+          settings: clone(DEFAULT_SETTINGS),
+          updatedAt: 0
         };
 
         const $ = (id) => document.getElementById(id);
@@ -880,6 +898,8 @@
         const audioToggle = $("audioToggle");
         const gameMusic = $("templateGameMusic");
         const typewriterSfx = $("templateTypewriterSfx");
+        const githubToken = $("githubToken");
+        const publishTemplateButton = $("publishTemplate");
 
         const editableTargets = {
           dpad: { element: dpad, label: "方向控制" },
@@ -1027,34 +1047,250 @@
           };
         }
 
-        function loadSavedTemplate() {
+        function normalizeQuestions(value) {
+          if (!Array.isArray(value) || value.length === 0) return null;
+          return value.map((item, index) => ({
+            text: typeof item.text === "string" ? item.text : defaultQuestions[index % defaultQuestions.length].text,
+            image: typeof item.image === "string" && item.image
+              ? item.image
+              : defaultQuestions[index % defaultQuestions.length].image,
+            label: typeof item.label === "string" ? item.label : "自訂動畫",
+            gif: normalizeGifGeometry(item.gif)
+          }));
+        }
+
+        function applyTemplateSnapshot(parsed) {
+          const questions = normalizeQuestions(parsed?.questions);
+          if (!questions) return false;
+          state.settings = normalizeSettings(parsed.settings);
+          state.questions = questions;
+          state.updatedAt = Number(parsed.updatedAt) || 0;
+          return true;
+        }
+
+        function openGifDraftDb() {
+          return new Promise((resolve, reject) => {
+            if (!window.indexedDB) {
+              reject(new Error("IndexedDB unavailable"));
+              return;
+            }
+            const request = window.indexedDB.open(GIF_DB_NAME, 1);
+            request.addEventListener("upgradeneeded", () => {
+              request.result.createObjectStore(GIF_DB_STORE);
+            });
+            request.addEventListener("success", () => resolve(request.result));
+            request.addEventListener("error", () => reject(request.error || new Error("GIF draft database failed")));
+          });
+        }
+
+        async function saveLocalGifDrafts() {
+          const db = await openGifDraftDb();
+          await new Promise((resolve, reject) => {
+            const transaction = db.transaction(GIF_DB_STORE, "readwrite");
+            const store = transaction.objectStore(GIF_DB_STORE);
+            state.questions.forEach((question, index) => {
+              const key = String(index);
+              if (typeof question.image === "string" && question.image.startsWith("data:")) {
+                store.put(question.image, key);
+              } else {
+                store.delete(key);
+              }
+            });
+            transaction.addEventListener("complete", resolve);
+            transaction.addEventListener("error", () => reject(transaction.error || new Error("GIF draft save failed")));
+          });
+          db.close();
+        }
+
+        async function restoreLocalGifDrafts() {
+          const db = await openGifDraftDb();
+          const values = await Promise.all(state.questions.map((_, index) => new Promise((resolve, reject) => {
+            const request = db.transaction(GIF_DB_STORE, "readonly").objectStore(GIF_DB_STORE).get(String(index));
+            request.addEventListener("success", () => resolve(request.result || ""));
+            request.addEventListener("error", () => reject(request.error || new Error("GIF draft read failed")));
+          })));
+          db.close();
+          values.forEach((value, index) => {
+            if (typeof value === "string" && value.startsWith("data:")) {
+              state.questions[index].image = value;
+            }
+          });
+        }
+
+        async function readLocalTemplate() {
           try {
             const raw = localStorage.getItem(STORAGE_KEY);
-            if (!raw) return;
-            const parsed = JSON.parse(raw);
-            state.settings = normalizeSettings(parsed.settings);
-            if (!Array.isArray(parsed.questions) || parsed.questions.length === 0) return;
-            state.questions = parsed.questions.map((item, index) => ({
-              text: typeof item.text === "string" ? item.text : defaultQuestions[index % defaultQuestions.length].text,
-              image: typeof item.image === "string" && item.image ? item.image : defaultQuestions[index % defaultQuestions.length].image,
-              label: typeof item.label === "string" ? item.label : "自訂動畫",
-              gif: normalizeGifGeometry(item.gif)
-            }));
+            return raw ? JSON.parse(raw) : null;
           } catch (error) {
-            console.warn("question template load failed", error);
+            console.warn("question template local draft load failed", error);
+            return null;
           }
         }
 
-        function saveTemplate() {
+        async function readPublishedTemplate() {
           try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify({
-              questions: state.questions,
-              settings: state.settings
-            }));
-            editorStatus.textContent = "題目與模板介面設定已儲存到此瀏覽器。";
+            const response = await fetch(`${PUBLISH_CONFIG_PATH}?v=${Date.now()}`, { cache: "no-store" });
+            if (!response.ok) return null;
+            return await response.json();
           } catch (error) {
-            editorStatus.textContent = "儲存失敗：GIF 檔案可能太大，請改用較小檔案。";
-            console.warn("question template save failed", error);
+            console.info("No published QA template found yet.");
+            return null;
+          }
+        }
+
+        async function loadSavedTemplate() {
+          const [localDraft, published] = await Promise.all([
+            readLocalTemplate(),
+            readPublishedTemplate()
+          ]);
+          const localTime = Number(localDraft?.updatedAt) || 0;
+          const publishedTime = Number(published?.updatedAt) || 0;
+          const selected = published && (!localDraft || publishedTime >= localTime)
+            ? published
+            : localDraft;
+          if (!selected || !applyTemplateSnapshot(selected)) return;
+          if (selected === localDraft) {
+            try {
+              await restoreLocalGifDrafts();
+            } catch (error) {
+              console.warn("Local GIF draft restore failed", error);
+            }
+          }
+        }
+
+        function localSnapshot() {
+          return {
+            updatedAt: Date.now(),
+            questions: state.questions.map((question) => ({
+              ...question,
+              // Large inline GIF data is kept in IndexedDB instead of localStorage.
+              image: typeof question.image === "string" && question.image.startsWith("data:") ? "" : question.image
+            })),
+            settings: state.settings
+          };
+        }
+
+        async function saveTemplate() {
+          const snapshot = localSnapshot();
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+          } catch (error) {
+            editorStatus.textContent = "本機設定儲存失敗；請檢查瀏覽器儲存權限。";
+            console.warn("question template local settings save failed", error);
+            return;
+          }
+          try {
+            await saveLocalGifDrafts();
+            editorStatus.textContent = "本機草稿已儲存。要讓其他設備看到，請按「發布到 GitHub Pages」。";
+          } catch (error) {
+            editorStatus.textContent = "本機文字與介面設定已儲存；自訂 GIF 請按「發布到 GitHub Pages」。";
+            console.warn("question template local GIF save failed", error);
+          }
+        }
+
+        function encodeUtf8Base64(value) {
+          const bytes = new TextEncoder().encode(value);
+          let binary = "";
+          bytes.forEach((byte) => { binary += String.fromCharCode(byte); });
+          return window.btoa(binary);
+        }
+
+        function dataUrlBase64(value) {
+          const comma = value.indexOf(",");
+          if (comma < 0) throw new Error("自訂 GIF 資料格式不正確");
+          return value.slice(comma + 1);
+        }
+
+        function dataUrlExtension(value) {
+          const mime = (value.match(/^data:([^;,]+)/i)?.[1] || "image/gif").toLowerCase();
+          return mime === "image/webp" ? "webp" : mime === "image/png" ? "png" : mime === "image/jpeg" ? "jpg" : "gif";
+        }
+
+        function githubPath(path) {
+          return path.split("/").map((part) => encodeURIComponent(part)).join("/");
+        }
+
+        async function githubGetSha(path, token) {
+          const response = await fetch(`https://api.github.com/repos/${PUBLISH_OWNER}/${PUBLISH_REPOSITORY}/contents/${githubPath(path)}?ref=${PUBLISH_BRANCH}`, {
+            headers: {
+              Accept: "application/vnd.github+json",
+              Authorization: `Bearer ${token}`,
+              "X-GitHub-Api-Version": "2022-11-28"
+            }
+          });
+          if (response.status === 404) return "";
+          if (!response.ok) throw new Error(`GitHub 讀取失敗（${response.status}）`);
+          return (await response.json()).sha || "";
+        }
+
+        async function githubPutFile(path, content, message, token) {
+          const sha = await githubGetSha(path, token);
+          const body = { message, content, branch: PUBLISH_BRANCH };
+          if (sha) body.sha = sha;
+          const response = await fetch(`https://api.github.com/repos/${PUBLISH_OWNER}/${PUBLISH_REPOSITORY}/contents/${githubPath(path)}`, {
+            method: "PUT",
+            headers: {
+              Accept: "application/vnd.github+json",
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+              "X-GitHub-Api-Version": "2022-11-28"
+            },
+            body: JSON.stringify(body)
+          });
+          if (!response.ok) {
+            let detail = "";
+            try { detail = (await response.json()).message || ""; } catch (error) { /* ignore malformed error body */ }
+            throw new Error(`GitHub 寫入失敗（${response.status}）${detail ? `：${detail}` : ""}`);
+          }
+        }
+
+        async function publishTemplate() {
+          const token = githubToken.value.trim();
+          if (!token) {
+            editorStatus.textContent = "請先貼上只授權 QA repository Contents 寫入權限的 GitHub Token。";
+            githubToken.focus();
+            return;
+          }
+          publishTemplateButton.disabled = true;
+          editorStatus.textContent = "正在把設定與 GIF 發布到 GitHub Pages…";
+          try {
+            const updatedAt = new Date().toISOString();
+            const publishStamp = Date.now();
+            const questions = [];
+            for (let index = 0; index < state.questions.length; index += 1) {
+              const question = state.questions[index];
+              let image = question.image;
+              if (typeof image === "string" && image.startsWith("data:")) {
+                const path = `assets/custom/question-${index + 1}-${publishStamp}.${dataUrlExtension(image)}`;
+                await githubPutFile(path, dataUrlBase64(image), `Update question ${index + 1} animation`, token);
+                image = path;
+              }
+              questions.push({ ...question, image, gif: normalizeGifGeometry(question.gif) });
+            }
+            const config = {
+              version: 1,
+              updatedAt,
+              questions,
+              settings: normalizeSettings(state.settings)
+            };
+            await githubPutFile(
+              PUBLISH_CONFIG_PATH,
+              encodeUtf8Base64(JSON.stringify(config, null, 2)),
+              "Update standalone QA template",
+              token
+            );
+            state.updatedAt = Date.parse(updatedAt);
+            const snapshot = localSnapshot();
+            snapshot.updatedAt = state.updatedAt;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+            try { await saveLocalGifDrafts(); } catch (error) { /* GitHub publish already succeeded */ }
+            editorStatus.textContent = "已發布。GitHub Pages 通常需要數十秒到幾分鐘更新，其他設備重新整理即可看到結果。";
+            githubToken.value = "";
+          } catch (error) {
+            editorStatus.textContent = `發布失敗：${error.message || "請確認 Token、repository 權限與網路連線。"}`;
+            console.warn("question template publish failed", error);
+          } finally {
+            publishTemplateButton.disabled = false;
           }
         }
 
@@ -1403,6 +1639,7 @@
         });
 
         $("saveQuestion").addEventListener("click", saveTemplate);
+        publishTemplateButton.addEventListener("click", publishTemplate);
 
         $("clearGif").addEventListener("click", () => {
           const fallback = defaultQuestions[state.index % defaultQuestions.length];
@@ -1584,9 +1821,13 @@
 
         window.addEventListener("pointerdown", unlockTemplateAudio, { passive: true });
 
-        loadSavedTemplate();
-        populateQuestionSelect();
-        renderQuestion();
+        async function initializeTemplate() {
+          await loadSavedTemplate();
+          populateQuestionSelect();
+          renderQuestion();
+        }
+
+        initializeTemplate();
       })();
     </script>
   </body>
