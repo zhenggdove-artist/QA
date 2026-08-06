@@ -765,6 +765,7 @@
               <option value="Arial">Arial</option>
             </select>
           </label>
+          <label>打字速度（%）<input id="typewriterSpeed" type="number" min="25" max="200" step="5"></label>
         </div>
       </fieldset>
 
@@ -845,7 +846,8 @@
           yes: { x: 38.39, y: 75.22, w: 9.7, h: 4.6 },
           no: { x: 52.77, y: 75.22, w: 10.6, h: 4.6 },
           questionFontSize: 1.04,
-          questionFontFamily: "Noto Serif TC Game"
+          questionFontFamily: "Noto Serif TC Game",
+          typewriterSpeed: 50
         };
 
         const state = {
@@ -895,6 +897,7 @@
         const noHeight = $("noHeight");
         const questionFontSize = $("questionFontSize");
         const questionFontFamily = $("questionFontFamily");
+        const typewriterSpeed = $("typewriterSpeed");
         const templateEditSelection = $("templateEditSelection");
         const templateEditSelectionLabel = $("templateEditSelectionLabel");
         const deviceStage = $("deviceStage");
@@ -972,7 +975,9 @@
             index += 1;
             dialogText.scrollTop = dialogText.scrollHeight;
             syncScrollbar();
-            typewriterTimer = window.setTimeout(typeNext, content[index - 1] === "\n" ? 100 : 34);
+            const speed = clampNumber(state.settings.typewriterSpeed, DEFAULT_SETTINGS.typewriterSpeed, 25, 200) / 100;
+            const baseDelay = content[index - 1] === "\n" ? 100 : 34;
+            typewriterTimer = window.setTimeout(typeNext, Math.max(1, Math.round(baseDelay / speed)));
           };
 
           typeNext();
@@ -1048,7 +1053,8 @@
             questionFontSize: clampNumber(source.questionFontSize, DEFAULT_SETTINGS.questionFontSize, 0.5, 3),
             questionFontFamily: allowedFamilies.includes(source.questionFontFamily)
               ? source.questionFontFamily
-              : DEFAULT_SETTINGS.questionFontFamily
+              : DEFAULT_SETTINGS.questionFontFamily,
+            typewriterSpeed: clampNumber(source.typewriterSpeed, DEFAULT_SETTINGS.typewriterSpeed, 25, 200)
           };
         }
 
@@ -1494,6 +1500,7 @@
           noHeight.value = String(settings.no.h);
           questionFontSize.value = String(settings.questionFontSize);
           questionFontFamily.value = settings.questionFontFamily;
+          typewriterSpeed.value = String(settings.typewriterSpeed);
         }
 
         function updateSettingsFromEditor() {
@@ -1525,7 +1532,8 @@
               h: clampNumber(noHeight.value, current.no.h, 1, 100)
             },
             questionFontSize: clampNumber(questionFontSize.value, current.questionFontSize, 0.5, 3),
-            questionFontFamily: questionFontFamily.value
+            questionFontFamily: questionFontFamily.value,
+            typewriterSpeed: clampNumber(typewriterSpeed.value, current.typewriterSpeed, 25, 200)
           });
           applySettingsToPreview();
           editorStatus.textContent = "介面設定已套用，請按儲存保存。";
@@ -1733,7 +1741,7 @@
           waterX, waterY, waterWidth, waterHeight,
           yesX, yesY, yesWidth, yesHeight,
           noX, noY, noWidth, noHeight,
-          questionFontSize, questionFontFamily
+          questionFontSize, questionFontFamily, typewriterSpeed
         ].forEach((input) => {
           input.addEventListener("change", updateSettingsFromEditor);
           input.addEventListener("input", updateSettingsFromEditor);
