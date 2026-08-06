@@ -46,6 +46,10 @@
           #000;
       }
 
+      body.template-loading > * {
+        visibility: hidden;
+      }
+
       body::after {
         position: fixed;
         inset: 0;
@@ -622,7 +626,7 @@
       }
     </style>
   </head>
-  <body>
+  <body class="template-loading">
     <div class="template-toolbar" aria-label="模板工具列">
       <button id="audioToggle" class="toolbar-button" type="button" aria-pressed="true">音樂／音效：開</button>
       <button id="editToggle" class="toolbar-button" type="button">編輯模板</button>
@@ -1307,6 +1311,30 @@
           }
         }
 
+        function preloadImageSource(source) {
+          return new Promise((resolve) => {
+            if (typeof source !== "string" || !source) {
+              resolve(false);
+              return;
+            }
+            const image = new Image();
+            image.decoding = "async";
+            image.addEventListener("load", () => resolve(true), { once: true });
+            image.addEventListener("error", () => {
+              console.warn("Question animation failed to load:", source);
+              resolve(false);
+            }, { once: true });
+            image.src = source;
+          });
+        }
+
+        async function preloadQuestionImages() {
+          const sources = [...new Set(state.questions
+            .map((question) => question.image)
+            .filter((source) => typeof source === "string" && source.length > 0))];
+          await Promise.all(sources.map(preloadImageSource));
+        }
+
         function localSnapshot() {
           return {
             updatedAt: Date.now(),
@@ -1885,8 +1913,10 @@
 
         async function initializeTemplate() {
           await Promise.all([loadSavedTemplate(), restoreQaDirectoryHandle()]);
+          await preloadQuestionImages();
           populateQuestionSelect();
           renderQuestion();
+          requestAnimationFrame(() => document.body.classList.remove("template-loading"));
         }
 
         initializeTemplate();
