@@ -47,7 +47,8 @@
       }
 
       body.template-loading > * {
-        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
       }
 
       body::after {
@@ -810,6 +811,7 @@
         const GIF_DB_META_STORE = "meta";
         const GIF_DB_VERSION = 2;
         const QA_CONFIG_PATH = "qa-config.json";
+        const preloadedImageSources = new Map();
         const defaultQuestions = [
           {
             text: "你不慎闖進一場詭譎槍戰的終局。\n倖存的警察身負重傷，所有線索都將使他認定你是槍戰的主嫌。\n\n你會救他嗎？",
@@ -1311,7 +1313,7 @@
           }
         }
 
-        function preloadImageSource(source) {
+        function preloadImageElement(source) {
           return new Promise((resolve) => {
             if (typeof source !== "string" || !source) {
               resolve(false);
@@ -1319,7 +1321,14 @@
             }
             const image = new Image();
             image.decoding = "async";
-            image.addEventListener("load", () => resolve(true), { once: true });
+            image.addEventListener("load", async () => {
+              try {
+                if (typeof image.decode === "function") await image.decode();
+              } catch (error) {
+                console.warn("Question animation decode warning:", error);
+              }
+              resolve(true);
+            }, { once: true });
             image.addEventListener("error", () => {
               console.warn("Question animation failed to load:", source);
               resolve(false);
@@ -1328,11 +1337,42 @@
           });
         }
 
+        async function preloadImageSource(source) {
+          if (preloadedImageSources.has(source)) return true;
+          if (source.startsWith("data:")) return preloadImageElement(source);
+          try {
+            const response = await fetch(source, { cache: "force-cache" });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const blobUrl = URL.createObjectURL(await response.blob());
+            const loaded = await preloadImageElement(blobUrl);
+            if (!loaded) {
+              URL.revokeObjectURL(blobUrl);
+              return false;
+            }
+            preloadedImageSources.set(source, blobUrl);
+            return true;
+          } catch (error) {
+            console.warn("Question animation Blob preload fallback:", source, error);
+            return preloadImageElement(source);
+          }
+        }
+
         async function preloadQuestionImages() {
           const sources = [...new Set(state.questions
             .map((question) => question.image)
             .filter((source) => typeof source === "string" && source.length > 0))];
           await Promise.all(sources.map(preloadImageSource));
+        }
+
+        function restartCharacterAnimation() {
+          const question = state.questions[state.index];
+          if (!question?.image) return;
+          characterSprite.removeAttribute("src");
+          requestAnimationFrame(() => {
+            if (state.questions[state.index] === question) {
+              characterSprite.src = preloadedImageSources.get(question.image) || question.image;
+            }
+          });
         }
 
         function localSnapshot() {
@@ -1599,7 +1639,7 @@
           if (!question) return;
           question.gif = normalizeGifGeometry(question.gif);
           applySettingsToPreview();
-          characterSprite.src = question.image;
+          characterSprite.src = preloadedImageSources.get(question.image) || question.image;
           characterSprite.alt = `第 ${state.index + 1} 題角色動畫`;
           characterSprite.style.left = `${question.gif.x}%`;
           characterSprite.style.top = `${question.gif.y}%`;
@@ -1916,7 +1956,10 @@
           await preloadQuestionImages();
           populateQuestionSelect();
           renderQuestion();
-          requestAnimationFrame(() => document.body.classList.remove("template-loading"));
+          requestAnimationFrame(() => {
+            document.body.classList.remove("template-loading");
+            restartCharacterAnimation();
+          });
         }
 
         initializeTemplate();
