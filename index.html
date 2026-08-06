@@ -236,6 +236,12 @@
         transition: background 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
       }
 
+      .answer-option > span {
+        display: block;
+        transform: scale(0.7);
+        transform-origin: center;
+      }
+
       .answer-option:hover,
       .answer-option.is-selected {
         border-color: #fff;
@@ -637,8 +643,8 @@
           <p id="dialogText" class="dialog-text"><span id="dialogTextContent"></span></p>
 
           <div class="answer-options" role="group" aria-label="回答">
-            <button id="answerYes" class="answer-option answer-option--yes" type="button">Y</button>
-            <button id="answerNo" class="answer-option answer-option--no" type="button">N</button>
+            <button id="answerYes" class="answer-option answer-option--yes" type="button"><span>Y</span></button>
+            <button id="answerNo" class="answer-option answer-option--no" type="button"><span>N</span></button>
           </div>
         </div>
 
@@ -658,7 +664,6 @@
           <span class="dpad-center" aria-hidden="true"></span>
         </div>
 
-        <span id="controlHint" class="control-hint">方向／灑水按鈕為模板預覽</span>
         <p id="templateStatus" class="template-status" aria-live="polite"></p>
 
         <div id="templateEditSelection" class="template-edit-selection" aria-hidden="true">
@@ -846,7 +851,7 @@
         const state = {
           questions: clone(defaultQuestions),
           index: 0,
-          answer: "",
+          answer: "Y",
           settings: clone(DEFAULT_SETTINGS),
           updatedAt: 0
         };
@@ -1566,9 +1571,9 @@
           characterSprite.style.height = `${question.gif.h}%`;
           startTemplateTypewriter(question.text);
           dialogText.scrollTop = dialogText.scrollHeight;
-          state.answer = "";
-          $("answerYes").classList.remove("is-selected");
-          $("answerNo").classList.remove("is-selected");
+          state.answer = "Y";
+          $("answerYes").classList.toggle("is-selected", state.answer === "Y");
+          $("answerNo").classList.toggle("is-selected", state.answer === "N");
           status.textContent = `第 ${state.index + 1} 題 / ${state.questions.length}`;
           questionSelect.value = String(state.index);
           questionInput.value = question.text;
@@ -1648,7 +1653,7 @@
           unlockTemplateAudio();
           state.questions = clone(defaultQuestions);
           state.index = 0;
-          state.answer = "";
+          state.answer = "Y";
           state.settings = clone(DEFAULT_SETTINGS);
           localStorage.removeItem(STORAGE_KEY);
           populateQuestionSelect();
