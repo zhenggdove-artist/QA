@@ -133,6 +133,18 @@
         filter: contrast(1.12) saturate(0.92) drop-shadow(0 0 12px rgba(255, 20, 24, 0.2));
       }
 
+      .character-video {
+        display: none;
+      }
+
+      .character-video.is-active {
+        display: block;
+      }
+
+      .character-sprite.is-hidden {
+        display: none;
+      }
+
       .dialog-box {
         position: absolute;
         left: -0.06%;
@@ -642,6 +654,7 @@
         <div id="introGame" class="intro-game">
           <div class="character-field">
             <img id="characterSprite" class="character-sprite" alt="題目角色動畫">
+            <video id="characterVideo" class="character-sprite character-video" muted autoplay loop playsinline preload="auto" aria-hidden="true"></video>
           </div>
 
           <div class="dialog-box" aria-hidden="true"></div>
@@ -812,10 +825,12 @@
         const GIF_DB_VERSION = 2;
         const QA_CONFIG_PATH = "qa-config.json";
         const preloadedImageSources = new Map();
+        const preloadedVideoSources = new Map();
         const defaultQuestions = [
           {
             text: "你不慎闖進一場詭譎槍戰的終局。\n倖存的警察身負重傷，所有線索都將使他認定你是槍戰的主嫌。\n\n你會救他嗎？",
-            image: "assets/question-1.gif",
+            image: "assets/custom/question-1-1785986772470.gif",
+            video: "assets/custom/question-1-1785986772470.mp4",
             label: "預設 question-1.gif",
             gif: { x: 0, y: 0, w: 100, h: 100 }
           },
@@ -857,7 +872,7 @@
         };
 
         const state = {
-          questions: clone(defaultQuestions),
+          questions: clone(defaultQuestions.slice(0, 1)),
           index: 0,
           answer: "Y",
           settings: clone(DEFAULT_SETTINGS),
@@ -866,6 +881,7 @@
 
         const $ = (id) => document.getElementById(id);
         const characterSprite = $("characterSprite");
+        const characterVideo = $("characterVideo");
         const dialogText = $("dialogText");
         const dialogTextContent = $("dialogTextContent");
         const scrollbar = $("dialogScrollbar");
@@ -1066,11 +1082,12 @@
 
         function normalizeQuestions(value) {
           if (!Array.isArray(value) || value.length === 0) return null;
-          return value.map((item, index) => ({
+          return value.slice(0, 1).map((item, index) => ({
             text: typeof item.text === "string" ? item.text : defaultQuestions[index % defaultQuestions.length].text,
             image: typeof item.image === "string" && item.image
               ? item.image
               : defaultQuestions[index % defaultQuestions.length].image,
+            video: typeof item.video === "string" ? item.video : (defaultQuestions[index % defaultQuestions.length].video || ""),
             label: typeof item.label === "string" ? item.label : "自訂動畫",
             gif: normalizeGifGeometry(item.gif)
           }));
@@ -1359,14 +1376,88 @@
 
         async function preloadQuestionImages() {
           const sources = [...new Set(state.questions
+            .filter((question) => !question.video)
             .map((question) => question.image)
             .filter((source) => typeof source === "string" && source.length > 0))];
           await Promise.all(sources.map(preloadImageSource));
         }
 
+        function preloadVideoElement(source) {
+          return new Promise((resolve) => {
+            const video = document.createElement("video");
+            let settled = false;
+            const finish = (success) => {
+              if (settled) return;
+              settled = true;
+              resolve(success);
+            };
+            video.muted = true;
+            video.playsInline = true;
+            video.preload = "auto";
+            video.addEventListener("loadeddata", () => finish(true), { once: true });
+            video.addEventListener("canplaythrough", () => finish(true), { once: true });
+            video.addEventListener("error", () => finish(false), { once: true });
+            video.src = source;
+            video.load();
+          });
+        }
+
+        async function preloadVideoSource(source) {
+          if (!source || preloadedVideoSources.has(source)) return true;
+          try {
+            const response = await fetch(source, { cache: "force-cache" });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const blobUrl = URL.createObjectURL(await response.blob());
+            const loaded = await preloadVideoElement(blobUrl);
+            if (!loaded) {
+              URL.revokeObjectURL(blobUrl);
+              return false;
+            }
+            preloadedVideoSources.set(source, blobUrl);
+            return true;
+          } catch (error) {
+            console.warn("Question animation video preload fallback:", source, error);
+            return preloadVideoElement(source);
+          }
+        }
+
+        async function preloadQuestionVideos() {
+          const sources = [...new Set(state.questions
+            .map((question) => question.video)
+            .filter((source) => typeof source === "string" && source.length > 0))];
+          await Promise.all(sources.map(preloadVideoSource));
+        }
+
+        function showQuestionMedia(question) {
+          const videoSource = question?.video
+            ? (preloadedVideoSources.get(question.video) || question.video)
+            : "";
+          if (videoSource) {
+            characterSprite.removeAttribute("src");
+            characterSprite.classList.add("is-hidden");
+            characterVideo.classList.add("is-active");
+            if (characterVideo.src !== videoSource) {
+              characterVideo.src = videoSource;
+              characterVideo.load();
+            }
+            characterVideo.currentTime = 0;
+            characterVideo.play().catch(() => {});
+            return;
+          }
+          characterVideo.pause();
+          characterVideo.removeAttribute("src");
+          characterVideo.classList.remove("is-active");
+          characterSprite.classList.remove("is-hidden");
+          characterSprite.src = preloadedImageSources.get(question.image) || question.image;
+        }
+
         function restartCharacterAnimation() {
           const question = state.questions[state.index];
           if (!question?.image) return;
+          if (question.video) {
+            showQuestionMedia(question);
+            return;
+          }
           characterSprite.removeAttribute("src");
           requestAnimationFrame(() => {
             if (state.questions[state.index] === question) {
@@ -1639,7 +1730,7 @@
           if (!question) return;
           question.gif = normalizeGifGeometry(question.gif);
           applySettingsToPreview();
-          characterSprite.src = preloadedImageSources.get(question.image) || question.image;
+          showQuestionMedia(question);
           characterSprite.alt = `第 ${state.index + 1} 題角色動畫`;
           characterSprite.style.left = `${question.gif.x}%`;
           characterSprite.style.top = `${question.gif.y}%`;
@@ -1727,7 +1818,7 @@
 
         $("resetTemplate").addEventListener("click", () => {
           unlockTemplateAudio();
-          state.questions = clone(defaultQuestions);
+          state.questions = clone(defaultQuestions.slice(0, 1));
           state.index = 0;
           state.answer = "Y";
           state.settings = clone(DEFAULT_SETTINGS);
@@ -1757,6 +1848,7 @@
           try {
             const dataUrl = await readFileAsDataUrl(file);
             state.questions[state.index].image = dataUrl;
+            state.questions[state.index].video = "";
             state.questions[state.index].label = `自訂：${file.name}`;
             renderQuestion();
             editorStatus.textContent = "動畫已載入，請按「儲存目前題目」保存。";
@@ -1774,6 +1866,7 @@
         $("clearGif").addEventListener("click", () => {
           const fallback = defaultQuestions[state.index % defaultQuestions.length];
           state.questions[state.index].image = fallback.image;
+          state.questions[state.index].video = fallback.video || "";
           state.questions[state.index].label = fallback.label;
           renderQuestion();
           editorStatus.textContent = "已移除本題自訂 GIF。請按儲存保存。";
@@ -1954,6 +2047,7 @@
         async function initializeTemplate() {
           await Promise.all([loadSavedTemplate(), restoreQaDirectoryHandle()]);
           await preloadQuestionImages();
+          await preloadQuestionVideos();
           populateQuestionSelect();
           renderQuestion();
           requestAnimationFrame(() => {
