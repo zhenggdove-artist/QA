@@ -3,11 +3,11 @@ Original prompt: Add durable GIF saving and cross-device publishing to the stand
 ## Completed
 
 - Moved custom GIF drafts from localStorage to IndexedDB.
-- Added GitHub Pages publishing for questions, layout settings, and custom assets.
+- Added local repository publishing for questions, layout settings, and custom assets without GitHub tokens or API writes.
 - Added cache-busted config loading and versioned GIF asset paths.
 - Verified the standalone page locally and checked JavaScript parsing.
 
 ## Remaining
 
-- Publish a configuration from the editor using a user-created fine-grained GitHub token.
+- Connect the editor to the local `QA` folder, save, then review/commit/push the generated files with GitHub Desktop.
 - Wait for the GitHub Pages deployment after each publish.
