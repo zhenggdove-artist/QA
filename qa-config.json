@@ -1,55 +1,12 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-06T03:26:12.470Z",
+  "updatedAt": "2026-08-06T05:30:42.325Z",
   "questions": [
     {
-      "text": "愛神出現了\n他將迫使任何你想要的人\n強制無條件地永遠愛著你\n\n你會接受這樣的愛嗎?",
-      "image": "assets/custom/question-1-1785986772470.gif",
+      "text": "愛神說道：\n「我將使你所愛之人，永恆地愛你，即便這違背了他的意志。」\n\n你會接受這樣的愛嗎？",
+      "image": "assets/custom/question-1-1785994242325.gif",
+      "video": "assets/custom/question-1-1785986772470.mp4",
       "label": "自訂：LOVEGOD.gif",
-      "gif": {
-        "x": 0,
-        "y": 0,
-        "w": 100,
-        "h": 100
-      }
-    },
-    {
-      "text": "大庭廣眾下，殺害一名陌生人，或是在絕無可能被發現的前提下殺害五名熟識親人。\n兩個選項都能讓你逃脫法律制裁。\n\n你會選擇殺害陌生人嗎？",
-      "image": "assets/question-2.gif",
-      "label": "預設 question-2.gif",
-      "gif": {
-        "x": 0,
-        "y": 0,
-        "w": 100,
-        "h": 100
-      }
-    },
-    {
-      "text": "你是一名藝術家，創作關乎你的童年創傷以及兒童人權。\n某位大亨願意長期供養你的創作，但你發現他的主要業務是販賣雛妓。\n\n你會接受供養嗎？",
-      "image": "assets/question-3.gif",
-      "label": "預設 question-3.gif",
-      "gif": {
-        "x": 0,
-        "y": 0,
-        "w": 100,
-        "h": 100
-      }
-    },
-    {
-      "text": "末日裡，世界僅剩你一人。\n神現身說明重啟世界的兩種方式。\n\n你會選擇讓世界重新開始嗎？",
-      "image": "assets/question-4.gif",
-      "label": "預設 question-4.gif",
-      "gif": {
-        "x": 0,
-        "y": 0,
-        "w": 100,
-        "h": 100
-      }
-    },
-    {
-      "text": "你願意進入天堂嗎？\n那個沒有痛苦、完全自由於悲傷的世界。\n\n你會走進去嗎？",
-      "image": "assets/question-5.gif",
-      "label": "預設 question-5.gif",
       "gif": {
         "x": 0,
         "y": 0,
@@ -90,6 +47,7 @@
       "h": 4.6
     },
     "questionFontSize": 0.7,
-    "questionFontFamily": "Noto Serif TC Game"
+    "questionFontFamily": "Noto Serif TC Game",
+    "typewriterSpeed": 50
   }
 }
